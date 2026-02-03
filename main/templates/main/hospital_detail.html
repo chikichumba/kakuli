@@ -1,0 +1,162 @@
+<!-- templates/main/hospital_detail.html -->
+{% extends 'base.html' %}
+
+{% block page_title %}{{ hospital.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <button class="btn btn-outline-secondary"
+                hx-get="{% url 'hospital_list' %}"
+                hx-target="#main-content"
+                hx-push-url="true">
+            <i class="fas fa-arrow-left"></i> Назад
+        </button>
+    </div>
+    
+    <div class="btn-group">
+        <button class="btn btn-outline-primary"
+                hx-get="{% url 'hospital_doctors' hospital.id %}"
+                hx-target="#hospital-content">
+            Врачи
+        </button>
+        <button class="btn btn-outline-primary"
+                hx-get="{% url 'hospital_schedule' hospital.id %}"
+                hx-target="#hospital-content">
+            Расписание
+        </button>
+        <button class="btn btn-outline-primary"
+                hx-get="{% url 'hospital_contact' hospital.id %}"
+                hx-target="#hospital-content">
+            Контакты
+        </button>
+    </div>
+</div>
+
+<div id="hospital-content">
+    <div class="card mb-4">
+        <div class="row g-0">
+            <div class="col-md-4">
+                {% if hospital.photo %}
+                <img src="{{ hospital.photo.url }}" 
+                     class="img-fluid rounded-start" 
+                     alt="{{ hospital.name }}">
+                {% else %}
+                <div class="h-100 d-flex align-items-center justify-content-center bg-light">
+                    <i class="fas fa-hospital fa-7x text-muted"></i>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-8">
+                <div class="card-body">
+                    <h2 class="card-title">{{ hospital.name }}</h2>
+                    
+                    <div class="mb-3">
+                        <p class="card-text">
+                            <i class="fas fa-map-marker-alt text-primary"></i>
+                            <strong>Адрес:</strong> {{ hospital.address }}
+                        </p>
+                        
+                        <p class="card-text">
+                            <i class="fas fa-clock text-primary"></i>
+                            <strong>Часы работы:</strong> {{ hospital.working_hours_display }}
+                        </p>
+                        
+                        <p class="card-text">
+                            <i class="fas fa-phone text-primary"></i>
+                            <strong>Телефон:</strong> {{ hospital.phone|default:"Не указан" }}
+                        </p>
+                        
+                        <p class="card-text">
+                            <i class="fas fa-envelope text-primary"></i>
+                            <strong>Email:</strong> {{ hospital.email }}
+                        </p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h5>Описание</h5>
+                        <p class="card-text">{{ hospital.description|linebreaks }}</p>
+                    </div>
+                    
+                    <div class="d-flex align-items-center">
+                        <div class="me-4">
+                            <h4>{{ hospital.doctors_count }}</h4>
+                            <small class="text-muted">Врачей</small>
+                        </div>
+                        <div class="me-4">
+                            <h4>4.8</h4>
+                            <small class="text-muted">Рейтинг</small>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary"
+                                    hx-get="{% url 'create_appointment_for_hospital' hospital.id %}"
+                                    hx-target="#appointment-modal"
+                                    hx-trigger="click"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#appointmentModal">
+                                <i class="fas fa-calendar-plus"></i> Записаться
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Врачи больницы -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-user-md"></i> Врачи больницы
+                <span class="badge bg-primary rounded-pill">{{ hospital.doctors_count }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row" id="hospital-doctors">
+                {% for doctor in hospital.doctors.all|slice:":6" %}
+                <div class="col-md-6 mb-3">
+                    {% include 'main/partials/doctor_card.html' with doctor=doctor %}
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> В этой больнице пока нет врачей
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if hospital.doctors.count > 6 %}
+            <div class="text-center mt-3">
+                <button class="btn btn-outline-primary"
+                        hx-get="{% url 'hospital_doctors' hospital.id %}"
+                        hx-target="#hospital-content"
+                        hx-push-url="true">
+                    Показать всех врачей
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для записи -->
+<div class="modal fade" id="appointmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="appointment-modal">
+            <!-- Сюда загрузится форма записи -->
+        </div>
+    </div>
+</div>
+
+<script>
+    // Автоматически открываем модальное окно если в URL есть hash
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.location.hash === '#appointment') {
+            var modal = new bootstrap.Modal(document.getElementById('appointmentModal'));
+            modal.show();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,233 @@
+<!-- templates/main/doctor_list.html -->
+{% extends 'base.html' %}
+
+{% block page_title %}Врачи{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user-md"></i> Врачи</h2>
+    
+    <div>
+        <button class="btn btn-primary"
+                hx-get="{% url 'doctor_filter_modal' %}"
+                hx-target="#filter-modal"
+                data-bs-toggle="modal"
+                data-bs-target="#filterModal">
+            <i class="fas fa-filter"></i> Фильтры
+        </button>
+    </div>
+</div>
+
+<!-- Поиск -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" 
+                           class="form-control" 
+                           placeholder="Поиск по имени или специальности..."
+                           name="q"
+                           value="{{ request.GET.q|default:'' }}"
+                           hx-get="{% url 'doctor_search' %}"
+                           hx-target="#doctors-container"
+                           hx-trigger="keyup changed delay:500ms"
+                           hx-include="[name='q']"
+                           hx-indicator="#search-loader">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+                <div id="search-loader" class="htmx-indicator mt-2">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <span class="ms-2">Поиск...</span>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <select class="form-select"
+                        name="hospital"
+                        hx-get="{% url 'doctor_filter' %}"
+                        hx-target="#doctors-container"
+                        hx-include="[name='hospital']">
+                    <option value="">Все больницы</option>
+                    {% for hospital in hospitals %}
+                    <option value="{{ hospital.id }}" 
+                            {% if request.GET.hospital == hospital.id|stringformat:"i" %}selected{% endif %}>
+                        {{ hospital.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <select class="form-select"
+                        name="specialization"
+                        hx-get="{% url 'doctor_filter' %}"
+                        hx-target="#doctors-container"
+                        hx-include="[name='specialization']">
+                    <option value="">Все специальности</option>
+                    <option value="Терапевт" {% if request.GET.specialization == 'Терапевт' %}selected{% endif %}>Терапевт</option>
+                    <option value="Хирург" {% if request.GET.specialization == 'Хирург' %}selected{% endif %}>Хирург</option>
+                    <option value="Кардиолог" {% if request.GET.specialization == 'Кардиолог' %}selected{% endif %}>Кардиолог</option>
+                    <option value="Невролог" {% if request.GET.specialization == 'Невролог' %}selected{% endif %}>Невролог</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Список врачей -->
+<div id="doctors-container">
+    {% if doctors %}
+    <div class="row">
+        {% for doctor in doctors %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card card-hover h-100">
+                <div class="position-relative">
+                    {% if doctor.photo %}
+                    <img src="{{ doctor.photo.url }}" 
+                         class="card-img-top" 
+                         alt="{{ doctor.name }}"
+                         style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
+                         style="height: 200px;">
+                        <i class="fas fa-user-md fa-5x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="position-absolute top-0 end-0 m-2">
+                        {% if doctor.rating %}
+                        <span class="badge bg-warning">
+                            <i class="fas fa-star"></i> {{ doctor.rating }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">{{ doctor.name }}</h5>
+                    
+                    <p class="card-text text-muted">
+                        <i class="fas fa-stethoscope"></i> {{ doctor.specialization }}
+                    </p>
+                    
+                    <div class="mb-2">
+                        <small class="text-muted">
+                            <i class="fas fa-hospital"></i> {{ doctor.hospital.name }}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <small>
+                            <i class="fas fa-briefcase"></i> Стаж: {{ doctor.experience_years }} лет
+                        </small>
+                    </div>
+                    
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if doctor.is_active %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle"></i> Активен
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-times-circle"></i> Не активен
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        hx-get="{% url 'doctor_detail' doctor.id %}"
+                                        hx-target="#main-content"
+                                        hx-push-url="true">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <button class="btn btn-sm btn-primary"
+                                        hx-get="{% url 'create_appointment' doctor.id %}"
+                                        hx-target="#appointment-modal"
+                                        hx-trigger="click"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#appointmentModal">
+                                    Запись
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Пагинация -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                   hx-get="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                   hx-target="#doctors-container">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link"
+                       hx-get="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                       hx-target="#doctors-container">
+                        {{ num }}
+                    </a>
+                </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                   hx-get="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+                   hx-target="#doctors-container">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i> Врачи не найдены. Попробуйте изменить критерии поиска.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Модальное окно фильтров -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" id="filter-modal">
+            <!-- Сюда загрузится форма фильтров -->
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для записи -->
+<div class="modal fade" id="appointmentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="appointment-modal">
+            <!-- Сюда загрузится форма записи -->
+        </div>
+    </div>
+</div>
+{% endblock %}

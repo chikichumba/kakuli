@@ -1,0 +1,204 @@
+<!-- templates/main/dashboard.html -->
+{% extends 'base.html' %}
+
+{% block page_title %}Главная панель{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Всего больниц</h6>
+                        <h2>{{ hospitals_count }}</h2>
+                    </div>
+                    <i class="fas fa-hospital fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Активных врачей</h6>
+                        <h2>{{ active_doctors }}</h2>
+                    </div>
+                    <i class="fas fa-user-md fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Мои записи</h6>
+                        <h2>{{ my_appointments }}</h2>
+                    </div>
+                    <i class="fas fa-calendar fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">Записей сегодня</h6>
+                        <h2>{{ today_appointments }}</h2>
+                    </div>
+                    <i class="fas fa-clock fa-3x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Ближайшие записи -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-calendar-alt"></i> Ближайшие записи
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="upcoming-appointments">
+                    {% include 'main/partials/upcoming_appointments.html' %}
+                </div>
+                
+                <!-- Автообновление каждые 30 секунд -->
+                <div hx-get="{% url 'upcoming_appointments' %}"
+                     hx-target="#upcoming-appointments"
+                     hx-trigger="every 30s"
+                     hx-swap="innerHTML">
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Активные врачи -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-md"></i> Рекомендуемые врачи
+                </h5>
+                <button class="btn btn-sm btn-outline-primary"
+                        hx-get="{% url 'doctor_list' %}"
+                        hx-target="#main-content"
+                        hx-push-url="true">
+                    Все врачи
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row" id="featured-doctors">
+                    {% for doctor in featured_doctors %}
+                    <div class="col-12 mb-3">
+                        <div class="d-flex align-items-center p-3 border rounded card-hover">
+                            {% if doctor.photo %}
+                            <img src="{{ doctor.photo.url }}" 
+                                 class="rounded-circle me-3" 
+                                 width="60" 
+                                 height="60"
+                                 alt="{{ doctor.name }}">
+                            {% else %}
+                            <div class="rounded-circle bg-secondary me-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 60px; height: 60px;">
+                                <i class="fas fa-user-md fa-2x text-white"></i>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ doctor.name }}</h6>
+                                <p class="mb-1 text-muted">{{ doctor.specialization }}</p>
+                                <small>
+                                    <i class="fas fa-hospital"></i> {{ doctor.hospital.name }}
+                                    <span class="ms-3">
+                                        <i class="fas fa-star text-warning"></i> {{ doctor.rating }}
+                                    </span>
+                                </small>
+                            </div>
+                            
+                            <button class="btn btn-sm btn-outline-primary"
+                                    hx-get="{% url 'doctor_detail' doctor.id %}"
+                                    hx-target="#main-content">
+                                Запись
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Быстрый поиск врача -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-search"></i> Быстрый поиск врача
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <select class="form-select"
+                        hx-get="{% url 'doctor_by_specialization' %}"
+                        hx-target="#quick-search-results"
+                        hx-include="[name='specialization']"
+                        name="specialization">
+                    <option value="">Все специальности</option>
+                    <option value="Терапевт">Терапевт</option>
+                    <option value="Хирург">Хирург</option>
+                    <option value="Кардиолог">Кардиолог</option>
+                    <option value="Невролог">Невролог</option>
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <select class="form-select"
+                        hx-get="{% url 'doctor_by_hospital' %}"
+                        hx-target="#quick-search-results"
+                        hx-include="[name='hospital_id']"
+                        name="hospital_id">
+                    <option value="">Все больницы</option>
+                    {% for hospital in hospitals %}
+                    <option value="{{ hospital.id }}">{{ hospital.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" 
+                           class="form-control" 
+                           placeholder="Имя врача..."
+                           name="name"
+                           hx-get="{% url 'doctor_by_name' %}"
+                           hx-target="#quick-search-results"
+                           hx-trigger="keyup changed delay:500ms"
+                           hx-include="[name='name']">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="quick-search-results" class="mt-3">
+            {% include 'main/partials/quick_search_results.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}

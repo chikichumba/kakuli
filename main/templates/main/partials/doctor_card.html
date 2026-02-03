@@ -1,0 +1,37 @@
+<!-- templates/main/partials/doctor_card.html -->
+<div class="border rounded p-3 d-flex align-items-center card-hover">
+    <div class="me-3">
+        {% if doctor.photo %}
+        <img src="{{ doctor.photo.url }}" 
+             class="rounded-circle" 
+             width="70" 
+             height="70"
+             alt="{{ doctor.name }}">
+        {% else %}
+        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+             style="width: 70px; height: 70px;">
+            <i class="fas fa-user-md fa-2x text-muted"></i>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="flex-grow-1">
+        <h6 class="mb-1">{{ doctor.name }}</h6>
+        <p class="mb-1 text-muted">{{ doctor.specialization }}</p>
+        <small class="text-muted">
+            <i class="fas fa-hospital"></i> {{ doctor.hospital.name }}
+            <span class="ms-2">
+                <i class="fas fa-star text-warning"></i> {{ doctor.rating|default:"-" }}
+            </span>
+        </small>
+    </div>
+    
+    <div>
+        <button class="btn btn-sm btn-outline-primary"
+                hx-get="{% url 'doctor_detail' doctor.id %}"
+                hx-target="#main-content"
+                hx-push-url="true">
+            Подробнее
+        </button>
+    </div>
+</div>
